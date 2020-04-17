@@ -1,3 +1,4 @@
+;;; init.el -*- lexical-binding: t; -*-
 ;; Author: Lee
 ;; https://github.com/loyalpartner/emacs-keymap
 ;; MIT License
@@ -22,7 +23,7 @@
 ;; OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
-;; TODO: 解析 Control x
+;; TODO: 解析 Mirror Mdoe
 (defcustom keymap-buffer-name "*keymap*"
   "The name of the buffer keymap")
 
@@ -49,43 +50,46 @@
 	((= (length command) 3) (keymap-get-keybinding-alist (nth 1 command)))
 	(t (cdr command))))
 
-(defun keymap--to-string (command &optional keyname)
+(defun keymap--to-print (command &optional keyname)
   ""
-  (cond ((null command) ; command maybe nil, command name , mode keymap
-	 (concat keyname " " (symbol-name command) "\n"))
-	((not (listp command))
-	 (concat keyname " " (symbol-name command) "\n"))
-	(t
-	 (seq-reduce
-	  #'concat (mapcar
-		    (lambda (keybingding)
-		      (keymap--to-string (cdr keybingding)
-					 (concat keyname " "
-						 (key-description
-						  (char-to-string (car keybingding))))))
-		    (keymap-get-keybinding-alist command))
-	  ""))))
+  (let ((result ""))
+    (cond ((or (functionp command)
+	       (null command)) ; command maybe nil, command name , mode keymap
+	   (keymap-print-message (concat keyname " " (symbol-name command) "\n")))
+	  ((keymapp command)
+	   (map-keymap (lambda (k v)
+			 (keymap-print-message
+			       (concat result (keymap--to-print v (concat keyname " "
+							       (key-description (vector k))))))
+			 )
+		       command)
+	   ))
+    result)
+  )
 
-(defun keymap-to-string (key)
-  (keymap--to-string (key-binding (kbd key)) key))
+(defun keymap-to-print (key)
+  (keymap--to-print (key-binding (kbd key)) key))
 
 
 (defun keymap-global-keys-to-string (modify-key)
   (let* ((mod-string (alist-get modify-key keymap-modify-alist))
 	 (keys (mapcar (lambda (rawkey) (concat mod-string (char-to-string rawkey)))
 		       keymap-printable-chars)))
+    (mapcar #'keymap-to-print keys)))
 
-    (seq-reduce #'concat
-		(mapcar #'keymap-to-string keys)
-		"")))
+(defun keymap-print-message (message)
+  (with-current-buffer (get-buffer-create keymap-buffer-name)
+    (insert message)
+    ;; (beginning-of-buffer)
+    ))
 
 (defun keymap-list-keys (modify-key)
   (with-current-buffer (get-buffer-create keymap-buffer-name)
        (setq buffer-read-only nil)
        (erase-buffer)
-       (insert (keymap-global-keys-to-string modify-key))
-       (beginning-of-buffer)
-       (pop-to-buffer keymap-buffer-name)))
+       (keymap-global-keys-to-string modify-key))
+
+  (pop-to-buffer keymap-buffer-name))
 
 (defun keymap-list-meta-keys ()
   (interactive)
