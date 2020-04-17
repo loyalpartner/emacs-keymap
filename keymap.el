@@ -87,8 +87,9 @@
   (with-current-buffer (get-buffer-create keymap-buffer-name)
        (setq buffer-read-only nil)
        (erase-buffer)
-       (keymap-global-keys-to-string modify-key))
-
+       (keymap-global-keys-to-string modify-key)
+       (beginning-of-buffer)
+       (setq buffer-read-only t))
   (pop-to-buffer keymap-buffer-name))
 
 (defun keymap-list-meta-keys ()
