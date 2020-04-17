@@ -35,7 +35,14 @@
     (metasuper . "M-s-")))
 
 (defvar keymap-printable-chars
-  (number-sequence ?: ?~))
+  (seq-concatenate 'list
+   (number-sequence ?a ?z)
+   (number-sequence ?A ?z)
+   (number-sequence ?0 ?9)
+   (number-sequence ? ?@ )
+   (number-sequence ?\[ ?`)
+   (number-sequence ?{ ?~)
+   ))
 
 (defun keymap-get-keybinding-alist (command)
   (cond ((not (listp command)) command )
@@ -76,7 +83,9 @@
   (with-current-buffer (get-buffer-create keymap-buffer-name)
        (setq buffer-read-only nil)
        (erase-buffer)
-       (insert (keymap-global-keys-to-string modify-key))))
+       (insert (keymap-global-keys-to-string modify-key))
+       (beginning-of-buffer)
+       (pop-to-buffer keymap-buffer-name)))
 
 (defun keymap-list-meta-keys ()
   (interactive)
